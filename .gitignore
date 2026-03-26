@@ -1,0 +1,29 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Editor / OS files
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+
+# Project runtime artefacts
+logs/
+temp/
+output/
+
+# Jupyter / IPython
+.ipynb_checkpoints/

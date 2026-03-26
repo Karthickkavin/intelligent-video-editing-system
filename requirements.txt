@@ -1,0 +1,32 @@
+# ============================================================
+# Intelligent Video Editing System – Python Dependencies
+# ============================================================
+# Install with:  pip install -r requirements.txt
+
+# ---- Core video processing ----
+opencv-python>=4.8.0
+moviepy>=1.0.3
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.9
+
+# ---- Audio processing ----
+librosa>=0.10.0
+soundfile>=0.12.1
+numpy>=1.24.0
+
+# ---- Machine learning (optional but recommended) ----
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ---- Web UI (Gradio for Colab) ----
+gradio>=4.0.0
+
+# ---- Utilities ----
+tqdm>=4.66.0
+Pillow>=10.0.0
+
+# ---- Optional: better face detection ----
+# mediapipe>=0.10.0
+
+# ---- Development / testing ----
+pytest>=7.4.0
