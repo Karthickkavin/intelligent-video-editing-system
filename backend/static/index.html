@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous Smart Video Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #7c6af7;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2d2d44;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #a89cf7;
+    }
+
+    label.drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #3d3d5c;
+      border-radius: 8px;
+      padding: 2rem;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    label.drop-zone:hover { border-color: #7c6af7; }
+
+    label.drop-zone span {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    input[type="file"] { display: none; }
+
+    #file-name {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .params-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .param-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.3rem;
+    }
+
+    .param-group input {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1px solid #3d3d5c;
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 8px;
+      background: #7c6af7;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #9a8bf9; }
+    button:disabled { background: #444; cursor: not-allowed; }
+
+    #status-card { display: none; }
+
+    .progress-bar-wrap {
+      background: #0f0f1a;
+      border-radius: 100px;
+      height: 10px;
+      overflow: hidden;
+      margin: 0.75rem 0;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #7c6af7;
+      border-radius: 100px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    #status-msg { font-size: 0.9rem; color: #aaa; }
+
+    #download-btn {
+      display: none;
+      margin-top: 1rem;
+      background: #28a745;
+    }
+
+    #download-btn:hover { background: #34c759; }
+
+    .error { color: #e05; font-size: 0.9rem; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>🎬 Smart Video Editor</h1>
+  <p class="subtitle">Automatically generate highlight clips from long videos</p>
+
+  <div class="card">
+    <h2>Upload Video</h2>
+    <label class="drop-zone" for="video-file">
+      <svg width="40" height="40" fill="none" stroke="#555" stroke-width="2"
+           viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 10l-4-4-4 4M12 6v10" />
+      </svg>
+      <span>Click or drag &amp; drop a video file (mp4, mov, mkv, avi)</span>
+    </label>
+    <input type="file" id="video-file" accept=".mp4,.mov,.mkv,.avi,.webm" />
+    <div id="file-name">No file selected</div>
+
+    <div class="params-grid">
+      <div class="param-group">
+        <label for="silence-threshold">Silence threshold (dB)</label>
+        <input type="number" id="silence-threshold" value="-40" min="-80" max="0" step="1" />
+      </div>
+      <div class="param-group">
+        <label for="min-score">Min segment score (0–1)</label>
+        <input type="number" id="min-score" value="0.3" min="0" max="1" step="0.05" />
+      </div>
+      <div class="param-group">
+        <label for="min-duration">Min duration (s)</label>
+        <input type="number" id="min-duration" value="2" min="0.5" step="0.5" />
+      </div>
+    </div>
+
+    <button id="upload-btn" onclick="startUpload()">Upload &amp; Process</button>
+    <div id="upload-error" class="error"></div>
+  </div>
+
+  <div class="card" id="status-card">
+    <h2>Processing Status</h2>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div id="status-msg">Waiting…</div>
+    <button id="download-btn" onclick="downloadResult()">⬇ Download Result</button>
+  </div>
+
+  <script>
+    let currentJobId = null;
+    let pollInterval = null;
+
+    document.getElementById("video-file").addEventListener("change", function () {
+      const name = this.files[0] ? this.files[0].name : "No file selected";
+      document.getElementById("file-name").textContent = name;
+    });
+
+    async function startUpload() {
+      const fileInput = document.getElementById("video-file");
+      const errEl = document.getElementById("upload-error");
+      errEl.textContent = "";
+
+      if (!fileInput.files.length) {
+        errEl.textContent = "Please select a video file.";
+        return;
+      }
+
+      const btn = document.getElementById("upload-btn");
+      btn.disabled = true;
+      btn.textContent = "Uploading…";
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      try {
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        const uploadData = await uploadRes.json();
+
+        if (!uploadRes.ok) {
+          errEl.textContent = uploadData.error || "Upload failed";
+          btn.disabled = false;
+          btn.textContent = "Upload & Process";
+          return;
+        }
+
+        currentJobId = uploadData.job_id;
+
+        const params = {
+          silence_threshold: parseFloat(document.getElementById("silence-threshold").value),
+          min_segment_score: parseFloat(document.getElementById("min-score").value),
+          min_segment_duration: parseFloat(document.getElementById("min-duration").value),
+        };
+
+        const processRes = await fetch(`/api/process/${currentJobId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(params),
+        });
+
+        if (!processRes.ok) {
+          const pd = await processRes.json();
+          errEl.textContent = pd.error || "Failed to start processing";
+          btn.disabled = false;
+          btn.textContent = "Upload & Process";
+          return;
+        }
+
+        document.getElementById("status-card").style.display = "block";
+        document.getElementById("download-btn").style.display = "none";
+        btn.textContent = "Processing…";
+        pollInterval = setInterval(pollStatus, 2000);
+
+      } catch (err) {
+        errEl.textContent = "Network error: " + err.message;
+        btn.disabled = false;
+        btn.textContent = "Upload & Process";
+      }
+    }
+
+    async function pollStatus() {
+      if (!currentJobId) return;
+      try {
+        const res = await fetch(`/api/status/${currentJobId}`);
+        const data = await res.json();
+
+        document.getElementById("progress-bar").style.width = data.progress + "%";
+        document.getElementById("status-msg").textContent = data.message || data.status;
+
+        if (data.status === "completed") {
+          clearInterval(pollInterval);
+          document.getElementById("download-btn").style.display = "block";
+          document.getElementById("upload-btn").disabled = false;
+          document.getElementById("upload-btn").textContent = "Upload & Process";
+        } else if (data.status === "failed") {
+          clearInterval(pollInterval);
+          document.getElementById("upload-error").textContent = "Error: " + data.message;
+          document.getElementById("upload-btn").disabled = false;
+          document.getElementById("upload-btn").textContent = "Upload & Process";
+        }
+      } catch (err) {
+        console.error("Poll error:", err);
+      }
+    }
+
+    function downloadResult() {
+      if (currentJobId) {
+        window.location.href = `/api/download/${currentJobId}`;
+      }
+    }
+  </script>
+</body>
+</html>
