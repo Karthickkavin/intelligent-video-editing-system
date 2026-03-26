@@ -35,7 +35,7 @@ export default function VideoPlayer({ jobId, jobStatus, onReset }) {
             <span className="stat-value" style={{ fontSize: '0.75rem', opacity: 0.7 }}>{jobId}</span>
           </div>
           <div className="stat-row">
-            <span className="stat-label">Completed At</span>
+            <span className="stat-label">Created At</span>
             <span className="stat-value">{formatDate(jobStatus?.created_at)}</span>
           </div>
           <div className="stat-row">

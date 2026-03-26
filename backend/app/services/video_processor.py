@@ -96,7 +96,7 @@ def process_video(job_id, input_path, output_path, jobs):
             output_path,
             codec='libx264',
             audio_codec='aac',
-            fps=24,
+            fps=fps,
             verbose=False,
             logger=None
         )
